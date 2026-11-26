@@ -9,14 +9,17 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.input.KeyCode;
 import javafx.stage.Stage;
 import sample.model.Medicine;
+import sample.model.Sale;
 import sample.service.MedicineService;
+import sample.service.SalesService;
 import sample.service.SettingsService;
 import sample.view.AddMedicineView;
 import sample.view.EditMedicineView;
 import sample.view.MedicineView;
+import sample.view.ReportsView;
 import sample.view.SettingsView;
-import sample.view.MedicineListView;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -53,7 +56,7 @@ public class MedicineController {
         setupAddButton();
         setupEditButton();
         setupSalesButton();
-        setupMedicinesButton();
+        setupReportsButton();
         setupSettingsButton();
         setupLogoutButton();
     }
@@ -321,6 +324,24 @@ public class MedicineController {
         thread.start();
     }
 
+    // Reports must open even if the sales file cannot be read:
+    // on any problem we print the reason in the Console and return an empty list
+
+    public static List<Sale> loadSalesSafely(SalesService salesService) {
+
+        try {
+            List<Sale> sales = salesService.loadSales();
+
+            return (sales == null) ? new ArrayList<>() : sales;
+
+        } catch (Exception e) {
+            System.out.println("Could not load sales for the report: " + e);
+            e.printStackTrace();
+
+            return new ArrayList<>();
+        }
+    }
+
     // returns null when added, otherwise the reason it was NOT added
 
     public static String addMedicineSafely(MedicineService service, Medicine medicine) {
@@ -496,6 +517,29 @@ public class MedicineController {
     }
 
     // =========================================================
+    // REPORTS BUTTON
+    // =========================================================
+
+    private void setupReportsButton() {
+        if (view.getReportsButton() == null) {
+            return;
+        }
+        view.getReportsButton().setOnAction(event -> openReportsWindow());
+    }
+
+    private void openReportsWindow() {
+        ReportsView reportsView = new ReportsView(
+                service.loadMedicines(),
+                loadSalesSafely(new SalesService()),
+                settingsService.getLowStockLimit(),
+                settingsService.getCurrency()
+        );
+
+        reportsView.getCloseButton().setOnAction(e -> reportsView.getStage().close());
+        reportsView.show();
+    }
+
+    // =========================================================
     // SETTINGS BUTTON
     // =========================================================
 
@@ -559,17 +603,6 @@ public class MedicineController {
                 ? "Settings saved and password changed."
                 : "Settings saved successfully.");
     }
-    private void setupMedicinesButton() {
-        view.getMedicinesButton().setOnAction(event -> {
-            showAllMedicines();
-        });
-    }
-
-    private void showAllMedicines() {
-        MedicineListView listView =
-                new MedicineListView(service.loadMedicines());
-        listView.show();
-    }
 
     // =========================================================
     // LOGOUT BUTTON
@@ -586,7 +619,6 @@ public class MedicineController {
                 if (response == ButtonType.OK) {
                     view.getRoot().getScene().getWindow().hide();
                 }
-
             });
         });
     }
