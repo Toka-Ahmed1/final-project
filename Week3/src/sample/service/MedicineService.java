@@ -14,7 +14,7 @@ import java.util.List;
 public class MedicineService {
 
     // Use the existing Data folder in the project
-    private final String filePath = "Data/medicines.txt";
+    private final String filePath = "Week3/Data/medicines.txt";
 
     // =====================================================
     // LOAD MEDICINES
