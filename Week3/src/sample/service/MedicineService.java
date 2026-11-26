@@ -14,7 +14,7 @@ public class MedicineService {
 
     public static final Object MEDICINE_LOCK = new Object();
 
-    private final String filePath = "Data/medicines.txt";
+    private final String filePath = "Week3/Data/medicines.txt";
 
     // =====================================================
     // LOAD MEDICINES
