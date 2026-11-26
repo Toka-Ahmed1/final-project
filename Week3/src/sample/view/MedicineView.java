@@ -698,4 +698,6 @@ public class MedicineView {
     public Button getHomeButton() {
         return homeButton;
     }
+
+
 }

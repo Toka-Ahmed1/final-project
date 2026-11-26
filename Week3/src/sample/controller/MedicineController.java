@@ -15,6 +15,7 @@ import sample.view.AddMedicineView;
 import sample.view.EditMedicineView;
 import sample.view.MedicineView;
 import sample.view.SettingsView;
+import sample.view.MedicineListView;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -52,6 +53,7 @@ public class MedicineController {
         setupAddButton();
         setupEditButton();
         setupSalesButton();
+        setupMedicinesButton();
         setupSettingsButton();
         setupLogoutButton();
     }
@@ -557,6 +559,17 @@ public class MedicineController {
                 ? "Settings saved and password changed."
                 : "Settings saved successfully.");
     }
+    private void setupMedicinesButton() {
+        view.getMedicinesButton().setOnAction(event -> {
+            showAllMedicines();
+        });
+    }
+
+    private void showAllMedicines() {
+        MedicineListView listView =
+                new MedicineListView(service.loadMedicines());
+        listView.show();
+    }
 
     // =========================================================
     // LOGOUT BUTTON
@@ -573,6 +586,7 @@ public class MedicineController {
                 if (response == ButtonType.OK) {
                     view.getRoot().getScene().getWindow().hide();
                 }
+
             });
         });
     }
