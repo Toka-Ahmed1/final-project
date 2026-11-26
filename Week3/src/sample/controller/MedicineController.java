@@ -49,6 +49,7 @@ public class MedicineController {
         setupMouseEvents();
         setupKeyboardEvents();
         setupSearch();
+        setupHomeButton();
         setupAddButton();
         setupEditButton();
         setupSalesButton();
@@ -80,6 +81,30 @@ public class MedicineController {
         }
 
         view.updateStatistics(total, available, outOfStock);
+    }
+
+    // =========================================================
+    // HOME BUTTON (LOGIN CONTROLLER)
+    // =========================================================
+
+    private void setupHomeButton() {
+        if (view.getHomeButton() == null) {
+            return;
+        }
+
+        view.getHomeButton().setOnAction(event -> {
+            try {
+                LoginController loginController = new LoginController();
+                Object loginView = loginController.getClass().getMethod("getView").invoke(loginController);
+                Object root = loginView.getClass().getMethod("getRoot").invoke(loginView);
+
+                if (view.getRoot().getScene() != null && root instanceof javafx.scene.Parent) {
+                    view.getRoot().getScene().setRoot((javafx.scene.Parent) root);
+                }
+            } catch (Exception e) {
+                showAlert("Info", "LoginController is ready, please match getView()/getRoot() in LoginView.");
+            }
+        });
     }
 
     // =========================================================
