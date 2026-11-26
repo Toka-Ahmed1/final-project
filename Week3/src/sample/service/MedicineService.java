@@ -1,4 +1,3 @@
-
 package sample.service;
 
 import sample.model.Medicine;
@@ -13,15 +12,28 @@ import java.util.List;
 
 public class MedicineService {
 
-    // Use the existing Data folder in the project
-    private final String filePath = "Week3/Data/medicines.txt";
+    public static final Object MEDICINE_LOCK = new Object();
+
+    private final String filePath = "Data/medicines.txt";
 
     // =====================================================
     // LOAD MEDICINES
     // =====================================================
 
-    public  List<Medicine> loadMedicines() {
+    public List<Medicine> loadMedicines() {
+        return loadMedicines(true);
+    }
 
+    public List<Medicine> loadMedicines(boolean useSync) {
+        if (useSync) {
+            synchronized (MEDICINE_LOCK) {
+                return readMedicinesFromFile();
+            }
+        }
+        return readMedicinesFromFile();
+    }
+
+    private List<Medicine> readMedicinesFromFile() {
         List<Medicine> medicines = new ArrayList<>();
 
         try (BufferedReader reader =
@@ -37,9 +49,9 @@ public class MedicineService {
                     continue;
                 }
 
-                String name = parts[0];
-                double price = Double.parseDouble(parts[1]);
-                int quantity = Integer.parseInt(parts[2]);
+                String name = parts[0].trim();
+                double price = Double.parseDouble(parts[1].trim());
+                int quantity = Integer.parseInt(parts[2].trim());
 
                 medicines.add(
                         new Medicine(name, price, quantity)
@@ -57,7 +69,29 @@ public class MedicineService {
     // ADD MEDICINE
     // =====================================================
 
-    public  void addMedicine(Medicine medicine) {
+    public void addMedicine(Medicine medicine) {
+        addMedicine(medicine, true);
+    }
+
+    public void addMedicine(Medicine medicine, boolean useSync) {
+        if (useSync) {
+            synchronized (MEDICINE_LOCK) {
+                System.out.println("[SYNC ADD] Acquired lock: " + Thread.currentThread().getName());
+                appendMedicineToFile(medicine);
+                System.out.println("[SYNC ADD] Releasing lock: " + Thread.currentThread().getName());
+            }
+        } else {
+            System.out.println("[NO-SYNC ADD] Running without lock: " + Thread.currentThread().getName());
+            appendMedicineToFile(medicine);
+        }
+    }
+
+    private void appendMedicineToFile(Medicine medicine) {
+        try {
+            Thread.sleep(1500);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
 
         try (BufferedWriter writer =
                      new BufferedWriter(
@@ -72,7 +106,7 @@ public class MedicineService {
             writer.newLine();
 
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to append medicine to file", e);
         }
     }
 
@@ -80,32 +114,69 @@ public class MedicineService {
     // UPDATE MEDICINE
     // =====================================================
 
-    public  void updateMedicine(
+    public void updateMedicine(
+            Medicine oldMedicine,
+            Medicine updatedMedicine) {
+        updateMedicine(oldMedicine, updatedMedicine, true);
+    }
+
+    public void updateMedicine(
+            Medicine oldMedicine,
+            Medicine updatedMedicine,
+            boolean useSync) {
+
+        if (useSync) {
+            synchronized (MEDICINE_LOCK) {
+                System.out.println("[SYNC UPDATE] Acquired lock: " + Thread.currentThread().getName());
+                performUpdateMedicine(oldMedicine, updatedMedicine);
+                System.out.println("[SYNC UPDATE] Releasing lock: " + Thread.currentThread().getName());
+            }
+        } else {
+            System.out.println("[NO-SYNC UPDATE] Running without lock: " + Thread.currentThread().getName());
+            performUpdateMedicine(oldMedicine, updatedMedicine);
+        }
+    }
+
+    private void performUpdateMedicine(
             Medicine oldMedicine,
             Medicine updatedMedicine) {
 
-        List<Medicine> medicines = loadMedicines();
+        List<Medicine> medicines = readMedicinesFromFile();
+
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Update interrupted", e);
+        }
+
+        boolean found = false;
 
         for (int i = 0; i < medicines.size(); i++) {
+            Medicine current = medicines.get(i);
 
-            Medicine medicine = medicines.get(i);
-
-            if (medicine.getName().equalsIgnoreCase(
-                    oldMedicine.getName())) {
-
+            if (current.getName().equalsIgnoreCase(oldMedicine.getName())) {
                 medicines.set(i, updatedMedicine);
+                found = true;
                 break;
             }
+        }
+
+        if (!found) {
+            throw new IllegalStateException(
+                    "Update rejected: '" + oldMedicine.getName()
+                            + "' was already modified or removed by another operation."
+            );
         }
 
         try {
             saveMedicines(medicines);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to save updated medicines", e);
         }
     }
 
-     // Without Sync
+    // Without Sync
 
     public boolean sellMedicineWithoutSync(
             String medicineName,
@@ -115,7 +186,7 @@ public class MedicineService {
             return false;
         }
 
-        List<Medicine> medicines = loadMedicines();
+        List<Medicine> medicines = readMedicinesFromFile();
 
         for (int i = 0; i < medicines.size(); i++) {
 
@@ -156,68 +227,61 @@ public class MedicineService {
         return false;
     }
 
-
-
-
     // =====================================================
-    //   SELL MEDICINE   with sync
+    // SELL MEDICINE with sync
     // =====================================================
 
-    public synchronized boolean sellMedicine(
+    public boolean sellMedicine(
             String medicineName,
             int requestedQuantity) {
 
-        if (requestedQuantity <= 0) {
-            return false;
-        }
+        synchronized (MEDICINE_LOCK) {
+            if (requestedQuantity <= 0) {
+                return false;
+            }
 
-        // Read the latest stock
-        List<Medicine> medicines = loadMedicines();
+            List<Medicine> medicines = readMedicinesFromFile();
 
-        for (int i = 0; i < medicines.size(); i++) {
+            for (int i = 0; i < medicines.size(); i++) {
 
-            Medicine medicine = medicines.get(i);
+                Medicine medicine = medicines.get(i);
 
-            if (medicine.getName().equalsIgnoreCase(medicineName)) {
+                if (medicine.getName().equalsIgnoreCase(medicineName)) {
 
-                // Check available quantity
-                if (medicine.getQuantity() < requestedQuantity) {
-                    return false;
-                }
-                try {
-                    Thread.sleep(3000);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    return false;
-                }
+                    if (medicine.getQuantity() < requestedQuantity) {
+                        return false;
+                    }
+                    try {
+                        Thread.sleep(3000);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        return false;
+                    }
 
-                // Calculate remaining stock
-                int remainingQuantity =
-                        medicine.getQuantity() - requestedQuantity;
+                    int remainingQuantity =
+                            medicine.getQuantity() - requestedQuantity;
 
-                // Create updated medicine object
-                Medicine updatedMedicine = new Medicine(
-                        medicine.getName(),
-                        medicine.getPrice(),
-                        remainingQuantity
-                );
+                    Medicine updatedMedicine = new Medicine(
+                            medicine.getName(),
+                            medicine.getPrice(),
+                            remainingQuantity
+                    );
 
-                medicines.set(i, updatedMedicine);
+                    medicines.set(i, updatedMedicine);
 
-                // Save the updated stock
-                try {
-                    saveMedicines(medicines);
-                    return true;
+                    try {
+                        saveMedicines(medicines);
+                        return true;
 
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    return false;
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        return false;
+                    }
                 }
             }
-        }
 
-        // Medicine not found
-        return false;
+            return false;
+        }
     }
 
     // =====================================================

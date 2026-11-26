@@ -9,7 +9,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 public class AddMedicineView {
@@ -29,9 +28,7 @@ public class AddMedicineView {
 
         stage.setTitle("Add Medicine");
 
-        stage.initModality(
-                Modality.APPLICATION_MODAL
-        );
+        // NOT modal: several Add windows can be open at the same time
 
         // =========================
         // Title
@@ -206,6 +203,6 @@ public class AddMedicineView {
     }
 
     public void show() {
-        stage.showAndWait();
+        stage.show();
     }
 }
