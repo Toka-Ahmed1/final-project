@@ -3,6 +3,7 @@ package sample.controller;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
@@ -15,6 +16,7 @@ import sample.service.SalesService;
 import sample.service.SettingsService;
 import sample.view.AddMedicineView;
 import sample.view.EditMedicineView;
+import sample.view.MedicineListView;
 import sample.view.MedicineView;
 import sample.view.ReportsView;
 import sample.view.SettingsView;
@@ -31,10 +33,6 @@ public class MedicineController {
     private final SettingsService settingsService;
     private final ObservableList<Medicine> allMedicines;
     private final String username;
-
-    public MedicineController() {
-        this("Admin");
-    }
 
     public MedicineController(String username) {
         this.username = username;
@@ -57,6 +55,7 @@ public class MedicineController {
         setupEditButton();
         setupSalesButton();
         setupReportsButton();
+        setupMedicinesButton();
         setupSettingsButton();
         setupLogoutButton();
     }
@@ -87,25 +86,14 @@ public class MedicineController {
     }
 
     // =========================================================
-    // HOME BUTTON (LOGIN CONTROLLER)
+    // HOME BUTTON (OPENS LOGIN CONTROLLER)
     // =========================================================
 
     private void setupHomeButton() {
-        if (view.getHomeButton() == null) {
-            return;
-        }
-
         view.getHomeButton().setOnAction(event -> {
-            try {
-                LoginController loginController = new LoginController();
-                Object loginView = loginController.getClass().getMethod("getView").invoke(loginController);
-                Object root = loginView.getClass().getMethod("getRoot").invoke(loginView);
-
-                if (view.getRoot().getScene() != null && root instanceof javafx.scene.Parent) {
-                    view.getRoot().getScene().setRoot((javafx.scene.Parent) root);
-                }
-            } catch (Exception e) {
-                showAlert("Info", "LoginController is ready, please match getView()/getRoot() in LoginView.");
+            LoginController loginController = new LoginController();
+            if (view.getRoot().getScene() != null) {
+                view.getRoot().getScene().setRoot(loginController.getView().getRoot());
             }
         });
     }
@@ -511,9 +499,43 @@ public class MedicineController {
     // =========================================================
 
     private void setupSalesButton() {
-        view.getSalesButton().setOnAction(event ->
-                showAlert("Info", "Sales screen is not connected yet.")
-        );
+        view.getSalesButton().setOnAction(event -> {
+            SalesController salesController = new SalesController(username);
+
+            Stage salesStage = new Stage();
+            salesStage.setTitle("Sales");
+            salesStage.setScene(
+                    new Scene(
+                            salesController.getView().getRoot(),
+                            1000,
+                            700
+                    )
+            );
+            salesStage.showAndWait();
+
+            // settings may have been changed from the Sales window
+
+            settingsService.reload();
+            loadSavedSettings();
+
+            allMedicines.setAll(service.loadMedicines());
+            filterMedicines(view.getSearchField().getText());
+            view.getMedicineTable().refresh();
+            refreshStatistics();
+        });
+    }
+
+    // =========================================================
+    // MEDICINES BUTTON
+    // =========================================================
+
+    private void setupMedicinesButton() {
+        view.getMedicinesButton().setOnAction(event -> showAllMedicines());
+    }
+
+    private void showAllMedicines() {
+        MedicineListView listView = new MedicineListView(service.loadMedicines());
+        listView.show();
     }
 
     // =========================================================
@@ -521,9 +543,6 @@ public class MedicineController {
     // =========================================================
 
     private void setupReportsButton() {
-        if (view.getReportsButton() == null) {
-            return;
-        }
         view.getReportsButton().setOnAction(event -> openReportsWindow());
     }
 
@@ -540,8 +559,8 @@ public class MedicineController {
     }
 
     // =========================================================
-    // SETTINGS BUTTON
-    // =========================================================
+// SETTINGS BUTTON
+// =========================================================
 
     private void setupSettingsButton() {
         view.getSettingsButton().setOnAction(event -> openSettings());
@@ -603,6 +622,11 @@ public class MedicineController {
                 ? "Settings saved and password changed."
                 : "Settings saved successfully.");
     }
+
+    // =========================================================
+    // GET VIEW
+    // =========================================================
+
 
     // =========================================================
     // LOGOUT BUTTON
