@@ -2,18 +2,18 @@ package sample.controller;
 
 import javafx.scene.control.Alert;
 import sample.service.SettingsService;
-import sample.view.LoginView;
+import sample.view.HomeView;
 
 public class LoginController {
 
-    private final LoginView view;
+    private final HomeView view;
 
     // passwords are checked (and changed) through SettingsService
 
     private final SettingsService settingsService = new SettingsService();
 
     public LoginController() {
-        this.view = new LoginView();
+        this.view = new HomeView();
 
         initEvents();
     }
@@ -60,7 +60,7 @@ public class LoginController {
         alert.showAndWait();
     }
 
-    public LoginView getView() {
+    public HomeView getView() {
         return view;
     }
 }

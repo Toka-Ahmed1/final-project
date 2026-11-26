@@ -9,7 +9,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
-public class LoginView {
+public class HomeView {
 
     // =========================
     // Main Root
@@ -28,7 +28,7 @@ public class LoginView {
 
     private Label messageLabel;
 
-    public LoginView() {
+    public HomeView() {
 
         root = new StackPane();
 
