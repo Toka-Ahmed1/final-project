@@ -1,4 +1,3 @@
-
 package sample.view;
 
 import javafx.geometry.Insets;
@@ -26,6 +25,22 @@ public class MedicineView {
     private final BorderPane root;
 
     // =========================
+    // Header Labels
+    // =========================
+
+    private Label logoLabel;
+    private Label subtitleLabel;
+    private Label userLabel;
+
+    // =========================
+    // Statistics Labels
+    // =========================
+
+    private Label totalValueLabel;
+    private Label availableValueLabel;
+    private Label outOfStockValueLabel;
+
+    // =========================
     // Controls
     // =========================
 
@@ -39,8 +54,27 @@ public class MedicineView {
 
     private Button salesButton;
 
+    private Button medicinesButton;
 
-    public MedicineView() {
+    private Button reportsButton;
+
+    private Button settingsButton;
+    private Button logoutButton;
+    private Button homeButton;
+
+    // Low Stock limit (comes from Settings)
+    private int lowStockLimit = 10;
+
+    // =========================
+    // Logged-in user (from Login)
+    // =========================
+
+    private final String username;
+
+    public MedicineView(String username) {
+
+        // must be set BEFORE createLayout(), the header uses it
+        this.username = username;
 
         root = new BorderPane();
 
@@ -66,22 +100,22 @@ public class MedicineView {
 
     private HBox createHeader() {
 
-        Label logo =
+        logoLabel =
                 new Label("FCI PHARMA CARE");
 
-        Label subtitle =
+        subtitleLabel =
                 new Label("Pharmacy Management System");
 
         VBox branding =
                 new VBox(3);
 
         branding.getChildren().addAll(
-                logo,
-                subtitle
+                logoLabel,
+                subtitleLabel
         );
 
-        Label user =
-                new Label("Mohammed  ● Online");
+        userLabel =
+                new Label(username + "  ● Online");
 
         HBox header =
                 new HBox();
@@ -103,7 +137,7 @@ public class MedicineView {
 
         header.getChildren().addAll(
                 branding,
-                user
+                userLabel
         );
 
         HBox.setHgrow(
@@ -112,6 +146,26 @@ public class MedicineView {
         );
 
         return header;
+    }
+
+    public void updateHeaderInfo(String pharmacyName, String userName) {
+        if (pharmacyName != null && !pharmacyName.isBlank()) {
+            logoLabel.setText(pharmacyName);
+        }
+        if (userName != null && !userName.isBlank()) {
+            userLabel.setText(userName + "  ● Online");
+        }
+    }
+
+    public void updateSubtitle(String text) {
+        if (text != null && !text.isBlank()) {
+            subtitleLabel.setText(text);
+        }
+    }
+
+    public void setLowStockLimit(int limit) {
+        lowStockLimit = limit;
+        medicineTable.refresh();
     }
 
     // =========================================================
@@ -136,16 +190,16 @@ public class MedicineView {
         Label dashboardTitle =
                 new Label("DASHBOARD");
 
-        Button homeButton =
+        homeButton =
                 createMenuButton("🏠  Home");
 
-        Button medicinesButton =
+        medicinesButton =
                 createMenuButton("💊  Medicines");
 
         salesButton =
                 createMenuButton("🛒  Sales");
 
-        Button reportsButton =
+        reportsButton =
                 createMenuButton("📊  Reports");
 
         // -------------------------
@@ -155,17 +209,13 @@ public class MedicineView {
         Label managementTitle =
                 new Label("MANAGEMENT");
 
-        //addButton &editbutton
-        // دول انا مفعلهم المطلوب منكم تفعيل الباقى ك تاسك
-
         addButton =
                 createMenuButton("➕  Add Medicine");
-
 
         editButton =
                 createMenuButton("✏  Edit Medicine");
 
-        Button settingsButton =
+        settingsButton =
                 createMenuButton("⚙  Settings");
 
         // -------------------------
@@ -184,7 +234,7 @@ public class MedicineView {
         // Logout
         // -------------------------
 
-        Button logoutButton =
+        logoutButton =
                 createMenuButton("🚪  Logout");
 
         // -------------------------
@@ -380,20 +430,23 @@ public class MedicineView {
         VBox totalCard =
                 createCard(
                         "Total Medicines",
-                        "120"
+                        "0"
                 );
+        totalValueLabel = (Label) totalCard.getChildren().get(1);
 
         VBox availableCard =
                 createCard(
                         "Available",
-                        "108"
+                        "0"
                 );
+        availableValueLabel = (Label) availableCard.getChildren().get(1);
 
         VBox outOfStockCard =
                 createCard(
                         "Out of Stock",
-                        "12"
+                        "0"
                 );
+        outOfStockValueLabel = (Label) outOfStockCard.getChildren().get(1);
 
         cards.getChildren().addAll(
 
@@ -405,6 +458,12 @@ public class MedicineView {
         );
 
         return cards;
+    }
+
+    public void updateStatistics(int total, int available, int outOfStock) {
+        totalValueLabel.setText(String.valueOf(total));
+        availableValueLabel.setText(String.valueOf(available));
+        outOfStockValueLabel.setText(String.valueOf(outOfStock));
     }
 
     // =========================================================
@@ -525,7 +584,7 @@ public class MedicineView {
                                                 "● Out of Stock"
                                         );
 
-                                    } else if (quantity <= 10) {
+                                    } else if (quantity <= lowStockLimit) {
 
                                         setText(
                                                 "● Low Stock"
@@ -581,58 +640,62 @@ public class MedicineView {
     }
 
     // =========================================================
-    // GET ROOT
+    // GETTERS
     // =========================================================
 
     public BorderPane getRoot() {
-
         return root;
     }
 
-    // =========================================================
-    // GET SEARCH FIELD
-    // =========================================================
+    public Label getLogoLabel() {
+        return logoLabel;
+    }
+
+    public Label getSubtitleLabel() {
+        return subtitleLabel;
+    }
+
+    public Label getUserLabel() {
+        return userLabel;
+    }
 
     public TextField getSearchField() {
-
         return searchField;
     }
 
-    // =========================================================
-    // GET MEDICINE TABLE
-    // =========================================================
-
     public TableView<Medicine> getMedicineTable() {
-
         return medicineTable;
     }
 
-    // =========================================================
-    // GET EDIT BUTTON
-    // =========================================================
-
     public Button getEditButton() {
-
         return editButton;
     }
 
-
-    // =========================================================
-    // GET EDIT BUTTON
-    // =========================================================
-
     public Button getAddButton() {
-
         return addButton;
     }
 
-    // =========================================================
-    // GET SALES BUTTON
-    // =========================================================
+    public Button getMedicinesButton() {
+        return medicinesButton;
+    }
+
+    public Button getReportsButton() {
+        return reportsButton;
+    }
 
     public Button getSalesButton() {
-
         return salesButton;
     }
-}
 
+    public Button getSettingsButton() {
+        return settingsButton;
+    }
+
+    public Button getLogoutButton() {
+        return logoutButton;
+    }
+
+    public Button getHomeButton() {
+        return homeButton;
+    }
+}
