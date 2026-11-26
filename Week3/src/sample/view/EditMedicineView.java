@@ -8,7 +8,6 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
-import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import sample.model.Medicine;
@@ -28,9 +27,10 @@ public class EditMedicineView {
 
         stage = new Stage();
 
-        stage.setTitle("Edit Medicine");
+        // the name in the title tells the Edit windows apart when several are open
+        stage.setTitle("Edit Medicine - " + medicine.getName());
 
-        stage.initModality(Modality.APPLICATION_MODAL);
+        // NOT modal: several Edit windows can be open at the same time
 
         Label title = new Label("Edit Medicine");
 
@@ -112,6 +112,6 @@ public class EditMedicineView {
     }
 
     public void show() {
-        stage.showAndWait();
+        stage.show();
     }
 }
